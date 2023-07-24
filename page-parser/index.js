@@ -89,7 +89,12 @@ const computeRecord = function (record) {
   }
 };
 
+var isChuni = false;
 const pageToRecordList = function (pageData) {
+  if (pageData.contains("中二节奏") {
+    isChuni = true;
+    return pageData;
+  }
   const getSibN = function (node, n) {
     let cur = node;
     let f = false;
@@ -314,7 +319,7 @@ const getLoginedUploader = async (body) => {
   const token = resp.headers["set-cookie"][0];
   const cookiePayload = token.slice(0, token.indexOf(";"));
 
-  return async (records) => {
+  return [async (records) => {
     await axios.post(
       "https://www.diving-fish.com/api/maimaidxprober/player/update_records",
       records,
@@ -324,7 +329,17 @@ const getLoginedUploader = async (body) => {
         },
       }
     );
-  };
+  },async (records) => {
+    await axios.post(
+      "https://www.diving-fish.com/api/chunithmprober/player/update_records_html",
+      records,
+      {
+        headers: {
+          cookie: cookiePayload,
+        },
+      }
+    );
+  },]
 };
 
 const serve = (pageParser) => {
@@ -333,10 +348,12 @@ const serve = (pageParser) => {
     let records = undefined
     try {
       records = pageParser(req.body);
-      for (let record of records) {
-        computeRecord(record);
+      if (!isChuni) {
+        for (let record of records) {
+          computeRecord(record);
+        }
+        if (records === undefined) throw new Error("Records is undefined")
       }
-      if (records === undefined) throw new Error("Records is undefined")
     }
     catch (err) {
       console.log(err)
@@ -356,7 +373,11 @@ const serve = (pageParser) => {
       }
       
       try {
-        await upload(records);
+        if (isChuni) {
+          await upload[1](records);
+        } else {
+          await upload[0](records);
+        }
       }
       catch (_err) {}
       res.send({ message: "success" });
